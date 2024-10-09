@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IoT Fast Fashion Dashboard</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Estilo del Navbar */
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            text-align: center;
+        }
+
+        .navbar a:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Contenedor del Dashboard */
+        .dashboard-container {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .dashboard-header {
+            background-color: #4CAF50;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            font-size: 1.5em;
+        }
+
+        .weight-display {
+            margin: 20px 0;
+            font-size: 2em;
+            color: #333333;
+        }
+
+        .refresh-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .refresh-button:hover {
+            background-color: #45a049;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        /* Estilos del pie de página */
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Importación de Chart.js -->
+</head>
+<body>
+<!-- Navbar -->
+<div class="navbar">
+    <a href="#home">Home</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#settings">Settings</a>
+    <a href="#contact">Contact</a>
+</div>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        Fast Fashion IoT Dashboard
+    </div>
+    <div class="weight-display">
+        Weight: <span id="weight-value">0</span> kg
+    </div>
+    <button class="refresh-button" onclick="refreshWeight()">Refresh</button>
+
+    <div class="chart-container">
+        <canvas id="weightChart"></canvas>
+    </div>
+
+    <h2>Scanned Items</h2>
+    <table border="1" style="width:100%; margin-top:20px;">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Scanned Code</th>
+                <th>Weight (kg)</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+        </tbody>
+    </table>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    © 2024 Fast Fashion IoT Project - All rights reserved.
+</div>
+
+<script>
+    const weightData = []; // Array to store weight history
+    const maxDataPoints = 10; // Maximum data points on the chart
+
+    // Configuration of the chart using Chart.js
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    const weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Initially empty labels
+            datasets: [{
+                label: 'Weight (kg)',
+                data: weightData,
+                borderColor: '#4CAF50',
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+                }
+            }
+        }
+    });
+
+    function refreshWeight() {
+        fetch('/data')
+        .then(response => response.json())
+        .then(d => {
+            // Update the weight display
+            const newWeight = d.last_weight;
+            document.getElementById('weight-value').textContent = newWeight;
+
+            // Update the chart
+            const currentTime = new Date().toLocaleTimeString();
+            if (weightChart.data.labels.length >= maxDataPoints) {
+                weightChart.data.labels.shift();
+                weightChart.data.datasets[0].data.shift();
+            }
+            weightChart.data.labels.push(currentTime);
+            weightChart.data.datasets[0].data.push(parseFloat(newWeight));
+
+            weightChart.update();
+
+            // Update the data table
+            const tableBody = document.getElementById('data-table');
+            tableBody.innerHTML = '';
+            d.data_list.forEach(item => {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.innerText = item.time;
+                const codeCell = document.createElement('td');
+                codeCell.innerText = item.code;
+                const weightCell = document.createElement('td');
+                weightCell.innerText = item.weight;
+                row.appendChild(timeCell);
+                row.appendChild(codeCell);
+                row.appendChild(weightCell);
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    setInterval(refreshWeight, 5000); // Fetch data every 5 seconds
+    refreshWeight(); // Initial fetch
+</script>
+</body>
+</html>

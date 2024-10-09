@@ -1,0 +1,3 @@
+flask
+pyserial
+boto3
