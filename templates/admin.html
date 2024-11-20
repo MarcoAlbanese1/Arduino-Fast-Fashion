@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IoT Fast Fashion Administration</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            text-align: center;
+        }
+
+        .navbar a:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Admin Container */
+        .admin-container {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            width: 80%;
+            margin: 20px auto;
+        }
+
+        .admin-header {
+            background-color: #4CAF50;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background-color: #f9f9f9;
+            width: 45%;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .clear-button {
+            background-color: #ff4d4d;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .clear-button:hover {
+            background-color: #e60000;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            bottom: 0;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .stat-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<div class="navbar">
+    <a href="/">Home</a>
+    <a href="admin.html">Administration</a>
+    <a href="https://us-west-2.quicksight.aws.amazon.com/sn/accounts/481665118631/dashboards/85505c5a-22a3-4154-9df0-ab69237550fd?directory_alias=fastfashion">Analytics</a>
+</div>
+
+<div class="admin-container">
+    <div class="admin-header">
+        Administration Panel
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Number of Items</h3>
+            <p id="total-items">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Items by Gender</h3>
+            <p>Men: <span id="men-count">0</span></p>
+            <p>Women: <span id="women-count">0</span></p>
+        </div>
+        <div class="stat-card">
+            <h3>Items by Material</h3>
+            <ul id="material-counts"></ul>
+        </div>
+        <div class="stat-card">
+            <h3>Items by Size</h3>
+            <ul id="size-counts"></ul>
+        </div>
+    </div>
+
+    <button class="clear-button" onclick="clearDataLog()">Clear Data Log</button>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    © 2024 Fast Fashion IoT Project - All rights reserved.
+</div>
+
+<script>
+    function fetchAdminData() {
+        fetch('/admin/data')
+            .then(response => response.json())
+            .then(data => {
+                // Update total items
+                document.getElementById('total-items').textContent = data.total_items;
+
+                // Update gender counts
+                document.getElementById('men-count').textContent = data.gender_counts.M;
+                document.getElementById('women-count').textContent = data.gender_counts.H;
+
+                // Update material counts
+                const materialCounts = data.material_counts;
+                const materialList = document.getElementById('material-counts');
+                materialList.innerHTML = '';
+                for (const [material, count] of Object.entries(materialCounts)) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${material}: ${count}`;
+                    materialList.appendChild(listItem);
+                }
+
+                // Update size counts
+                const sizeCounts = data.size_counts;
+                const sizeList = document.getElementById('size-counts');
+                sizeList.innerHTML = '';
+                for (const [size, count] of Object.entries(sizeCounts)) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${size}: ${count}`;
+                    sizeList.appendChild(listItem);
+                }
+            })
+            .catch(error => console.error('Error fetching admin data:', error));
+    }
+
+    function clearDataLog() {
+        if (confirm('Are you sure you want to clear the data log? This action cannot be undone.')) {
+            fetch('/admin/clear', {
+                method: 'POST'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Data log has been cleared.');
+                    fetchAdminData(); // Refresh the admin data
+                } else {
+                    alert('Failed to clear data log.');
+                }
+            })
+            .catch(error => console.error('Error clearing data log:', error));
+        }
+    }
+
+    // Fetch admin data on page load
+    fetchAdminData();
+</script>
+</body>
+</html>

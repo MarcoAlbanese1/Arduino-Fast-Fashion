@@ -168,16 +168,19 @@
 <body>
 <!-- Navbar -->
 <div class="navbar">
-    <a href="#home">Home</a>
-    <a href="#dashboard">Dashboard</a>
-    <a href="#settings">Settings</a>
-    <a href="#contact">Contact</a>
+    <a href="/">Home</a>
+    <a href="/admin.html">Administration</a>
+    <a href="https://us-west-2.quicksight.aws.amazon.com/sn/accounts/481665118631/dashboards/85505c5a-22a3-4154-9df0-ab69237550fd?directory_alias=fastfashion">Analytics</a>
 </div>
 
 <div class="dashboard-container">
     <div class="dashboard-header">
         Fast Fashion IoT Dashboard
     </div>
+
+    <!-- Scanning Status Message -->
+    <div id="scanning-status" style="display: none; color: red; font-weight: bold; margin-top: 20px;"></div>
+
     <div class="weight-display">
         Weight: <span id="weight-value">0</span> kg
     </div>
@@ -243,6 +246,9 @@
         }
     });
 
+    let scansEnabled = true;
+    const scanningStatus = document.getElementById('scanning-status');
+
     function refreshWeight() {
         fetch('/data')
         .then(response => response.json())
@@ -268,7 +274,16 @@
             d.data_list.forEach(item => {
                 const row = document.createElement('tr');
                 const timeCell = document.createElement('td');
-                timeCell.innerText = item.time;
+                let dateStr;
+                if (item.timestamp) {
+                    const dateObj = new Date(item.timestamp * 1000); // Convert seconds to milliseconds
+                    dateStr = dateObj.toLocaleString(); // Adjust format as needed
+                } else if (item.time_display && item.time_display !== 'N/A') {
+                    dateStr = item.time_display;
+                } else {
+                    dateStr = 'N/A';
+                }
+                timeCell.innerText = dateStr;
                 const codeCell = document.createElement('td');
                 codeCell.innerText = item.code;
                 const weightCell = document.createElement('td');
@@ -278,11 +293,26 @@
                 row.appendChild(weightCell);
                 tableBody.appendChild(row);
             });
+
+            // Handle scanning status
+            if (d.scans_enabled !== undefined) {
+                if (!d.scans_enabled && scansEnabled) {
+                    // Scanning has been disabled
+                    alert("Maximum weight reached. Scanning is disabled until items are cleared.");
+                    scanningStatus.style.display = 'block';
+                    scanningStatus.textContent = "Maximum weight reached. Scanning is disabled until items are cleared.";
+                    scansEnabled = false;
+                } else if (d.scans_enabled && !scansEnabled) {
+                    // Scanning has been re-enabled
+                    scanningStatus.style.display = 'none';
+                    scansEnabled = true;
+                }
+            }
         })
         .catch(error => console.error('Error fetching data:', error));
     }
 
-    setInterval(refreshWeight, 1000); // Fetch data every 1 second
+    setInterval(refreshWeight, 5000); // Fetch data every 5 seconds
     refreshWeight(); // Initial fetch
 </script>
 </body>

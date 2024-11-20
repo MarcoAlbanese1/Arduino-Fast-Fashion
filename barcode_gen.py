@@ -19,7 +19,7 @@ def generar_codigo_barras_aleatorio():
     pais = str(random.choice(['01', '02', '03', '04', '05']))
     
     # Año de producción (últimos dos dígitos del año actual)
-    año = str(random.randint(20, 30))  # Genera un año de producción entre 2020 y 2030
+    año = str(random.randint(10, 24))  # Genera un año de producción entre 2020 y 2030
 
     # Crear el código de barras con los elementos especificados
     codigo_barras = f"{producto_id}{genero}{talla}{material}{pais}{año}"
